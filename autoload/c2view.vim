@@ -18,10 +18,10 @@ function! c2view#Run()
     return
   endif
 
-  let colorCode = c2view#color#rgbHex2Ansi(color)
+  let colorCode = c2view#color#hex2Ansi(color)
   execute printf("highlight C2ViewHighLight ctermfg=%s ctermbg=%s", colorCode, colorCode)
 
-  call popup_atcursor("     ", #{
+  call popup_atcursor("_____", #{
         \ moved: 'any',
         \ highlight: 'C2ViewHighLight',
         \})

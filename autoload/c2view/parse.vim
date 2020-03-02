@@ -7,14 +7,13 @@ let s:keepcpo = &cpo
 set cpo&vim
 
 function! s:parseHexColor(text)
-  return matchstr(a:text, '#\(\x\{6\}\|\x\{3\}\)')
+  return matchstr(a:text, '#\(\x\{8\}\|\x\{6\}\|\x\{3\}\)')
 endfunction
 
 
 function! c2view#parse#getColor(text) abort
     let hexColor = s:parseHexColor(a:text)
     return hexColor
-
 endfunction
 
 
