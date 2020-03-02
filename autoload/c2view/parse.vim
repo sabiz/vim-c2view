@@ -7,7 +7,7 @@ let s:keepcpo = &cpo
 set cpo&vim
 
 function! s:parseHexColor(text)
-  return matchstr(a:text, '#\(\x\{8\}\|\x\{6\}\|\x\{3\}\)')
+  return matchstr(a:text, '#\(\x\{8\}\|\x\{6\}\|\x\{4\}\|\x\{3\}\)')
 endfunction
 
 

@@ -41,7 +41,7 @@ endfunction
 
 function! s:hexColor2DecColor(hex) abort
     let hex = a:hex
-    if strlen(hex) == 4
+    if strlen(hex) == 4 || strlen(hex) == 5
       let i = 1
       let tmp = hex
       let hex = '#'
