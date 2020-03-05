@@ -39,6 +39,17 @@ function! s:ansiColor2DecColor(ansi) abort
 
 endfunction
 
+function! s:alphaBlend(r, g, b, a)
+    let bgHilight=synIDattr(hlID('Normal'), 'bg')
+    let bgColor = s:ansiColor2DecColor(bgHilight)
+    return [
+      \ (a:r * a:a) + (bgColor[0] * (1.0 - a:a)),
+      \ (a:g * a:a) + (bgColor[1] * (1.0 - a:a)),
+      \ (a:b * a:a) + (bgColor[2] * (1.0 - a:a))
+      \]
+
+endfunction
+
 function! s:hexColor2DecColor(hex) abort
     let hex = a:hex
     if strlen(hex) == 4 || strlen(hex) == 5
@@ -46,8 +57,8 @@ function! s:hexColor2DecColor(hex) abort
       let tmp = hex
       let hex = '#'
       while i < strlen(tmp)
-          let hex = hex . strpart(tmp, i, 1) . strpart(tmp, i, 1)
-          let i += 1
+        let hex = hex . strpart(tmp, i, 1) . strpart(tmp, i, 1)
+        let i += 1
       endwhile
     endif
     let decimal = str2nr(strpart(hex, 1, 6), 16)
@@ -59,37 +70,50 @@ function! s:hexColor2DecColor(hex) abort
     endif
 
     " Calculate alpha blend
-    let bgHilight=synIDattr(hlID('Normal'), 'bg')
-    let bgColor = s:ansiColor2DecColor(bgHilight)
     let alpha = str2nr(strpart(hex, 7, 2), 16)
-    return [
-      \ (red * alpha / 255) + (bgColor[0] * (255 - alpha)/255),
-      \ (green * alpha / 255) + (bgColor[1] * (255 - alpha)/255),
-      \ (blue * alpha / 255) + (bgColor[2] * (255 - alpha)/255)
-      \]
+    return s:alphaBlend(red, green, blue, alpha/255.0)
 endfunction
 
-function! c2view#color#hex2Ansi(hex) abort
-    let [r, g, b] = s:hexColor2DecColor(a:hex)
+function! s:rgb2Ansi(rgb) abort
+    let [r, g, b] = a:rgb
     " https://github.com/Qix-/color-convert/blob/1df58eff59b30d075513860cf69f8aec4620140d/conversions.js#L567
     " Gray scale color
     if r == g && g == b
-        if r < 8
-            return 16
-        endif
+      if r < 8
+        return 16
+      endif
 
-        if r > 248
-            return 231
-        endif
+      if r > 248
+        return 231
+      endif
 
-        return round(((r - 8) / 247.0) * 24) + 232
+      return round(((r - 8) / 247.0) * 24) + 232
     endif
 
     let ansi = round(16
-                \   + (36 * round(r / 255.0 * 5))
-                \   + (6 * round(g / 255.0 * 5))
-                \   + round(b / 255.0 * 5))
+      \   + (36 * round(r / 255.0 * 5))
+      \   + (6 * round(g / 255.0 * 5))
+      \   + round(b / 255.0 * 5))
     return ansi
+
+endfunction
+ 
+function! c2view#color#hex2Ansi(hex) abort
+    let rgb = s:hexColor2DecColor(a:hex)
+    return s:rgb2Ansi(rgb)
+endfunction
+
+function! c2view#color#rgba2Ansi(rgba) abort
+  let rgbaList = map(split(a:rgba, ','), 'str2float(v:val)')
+  if len(rgbaList) == 3
+    return s:rgb2Ansi(rgbaList)
+  endif
+  if len(rgbaList) == 4
+    return s:rgb2Ansi(s:alphaBlend(rgbaList[0], rgbaList[1], rgbaList[2], rgbaList[3]))
+  endif
+
+  " Invalid length
+  return -1
 endfunction
 
 let &cpo = s:keepcpo

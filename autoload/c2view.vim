@@ -8,17 +8,30 @@ set cpo&vim
 
 function! c2view#Run()
   let currentLine  = getline(".")
-  let color = c2view#parse#getColor(currentLine)
-
-  if color is# ""
+  let parsedLine = c2view#parse#getColor(currentLine)
+  if parsedLine['type'] is# g:c2view_parsed_type_none
     return
   endif
 
-  if match(color, expand("<cword>")) == -1
+  " TODO check cursor on color code
+  " if match(parsedLine['color'], expand("<cword>")) == -1
+  "   return
+  " endif
+
+  if parsedLine['type'] is# g:c2view_parsed_type_hex
+    let colorCode = c2view#color#hex2Ansi(parsedLine['color'])
+  elseif parsedLine['type'] is# g:c2view_parsed_type_rgb
+    let colorCode = c2view#color#rgba2Ansi(parsedLine['color'])
+    if colorCode == -1
+      return
+    endif
+  elseif parsedLine['type'] is# g:c2view_parsed_type_hsl
+    let colorCode = c2view#color#hex2Ansi(parsedLine['color'])
+    " echo parsedLine
+    return
+  else
     return
   endif
-
-  let colorCode = c2view#color#hex2Ansi(color)
   execute printf("highlight C2ViewHighLight ctermfg=%s ctermbg=%s", colorCode, colorCode)
 
   call popup_atcursor("_____", #{
