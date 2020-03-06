@@ -1,0 +1,28 @@
+
+let s:sidCache = {}
+function! s:findSid(file)
+  if has_key(s:sidCache, a:file)
+    return s:sidCache[a:file]
+  endif
+
+  silent! redir => scriptnames
+  silent! scriptnames
+  silent! redir END
+
+  for line in split(scriptnames, '\n')
+    if line =~# a:file
+      let sid = matchstr(line, '^\s*\zs\d\+\ze')
+      let s:sidCache[a:file] = sid
+      return sid
+    endif
+  endfor
+endfunction
+
+function! GetLocalFunction(file, name) abort
+  return function('<SNR>'.s:findSid(a:file).'_'.a:name)
+endfunction
+
+" autoload
+call c2view#Run()
+
+" vim:ft=vim:fdm=marker:fmr={{{,}}}:ts=8:sw=2:sts=2:et

@@ -15,14 +15,13 @@ function! s:parseHexColor(text)
   return matchstr(a:text, '#\(\x\{8\}\|\x\{6\}\|\x\{4\}\|\x\{3\}\)')
 endfunction
 
-" TODO test
 function! s:parseRgbColor(text)
   " 0 - 255
-  let numberRegex = '255\|25[0-4]\(\.\d\+\)\?\|2[0-4]\d\(\.\d\+\)\?\|1\d\{2\}\(\.\d\+\)\?\|\d\{1,2\}\(\.\d\+\)\?\|\d\d\(\.\d\+\)\?\|[1-9]\(\.\d\+\)\?'
+  let numberRegex = '^\(255\(\.\d\+\)\?\|25[0-4]\(\.\d\+\)\?\|2[0-4]\d\(\.\d\+\)\?\|1\d\{2\}\(\.\d\+\)\?\|\d\{1,2\}\(\.\d\+\)\?\|\d\d\(\.\d\+\)\?\|[1-9]\(\.\d\+\)\?\)'
   " 0% - 100%
   let parcentRegex = '^\(100\(\.0\+\)\?\|[1-9]\d\(\.\d\+\)\?\|\d\(\.\d\+\)\?\)%'
   " 0 -1
-  let alphaRegex = '0\.\d\+\|1\|0'
+  let alphaRegex = '0\?\.\d\+\|1\|0'
   " Not support floats value syntax
   " rgba(1e2, .5e1, .5e0, +.25e2%)
 
@@ -51,13 +50,12 @@ function! s:parseRgbColor(text)
     if parcentPos[1] == searchPos
       let isParcentStyle = 1
       let searchPos = parcentPos[2]
-    endif
-    " Invalid parcent style (e.g. rgb(255, 100%, 128)
-    if isParcentStyle && parcentPos[1] != 0 && i > 0
+    elseif isParcentStyle && parcentPos[1] == -1 && i > 0
+      " Invalid parcent style (e.g. rgb(255, 100%, 128)
       return ''
     endif
     if i < 2 " Check separater
-      let separaterPos = matchstrpos(a:text, '\s\+\|\s*,\s*', searchPos)
+      let separaterPos = matchstrpos(a:text, '^\s\+\|^\s*,\s*', searchPos)
       if separaterPos[1] == -1
         return ''
       endif
@@ -66,6 +64,11 @@ function! s:parseRgbColor(text)
     let rgba[i] = val[0]
     let i += 1
   endwhile
+
+  if isParcentStyle
+    let rgba = map(rgba, "printf('%.0f',str2float(v:val)/100*255)")
+    let rgba[3] = -1
+  endif
 
   "End ?
   if match(a:text, '\s*)', searchPos) == searchPos
