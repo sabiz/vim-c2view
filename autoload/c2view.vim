@@ -13,10 +13,10 @@ function! c2view#Run()
     return
   endif
 
-  " TODO check cursor on color code
-  " if match(parsedLine['color'], expand("<cword>")) == -1
-  "   return
-  " endif
+  let cursorCol = col(".")
+  if parsedLine['start'] > cursorCol || parsedLine['end'] < cursorCol
+    return
+  endif
 
   if parsedLine['type'] is# g:c2view_parsed_type_hex
     let colorCode = c2view#color#hex2Ansi(parsedLine['color'])
