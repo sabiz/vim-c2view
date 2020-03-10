@@ -6,7 +6,12 @@
 let s:keepcpo = &cpo
 set cpo&vim
 
+let s:STYLE_SHEET_FILE_TYPE=['css', 'scss', 'sass', 'less', 'styl']
+
 function! c2view#Run()
+  if match(s:STYLE_SHEET_FILE_TYPE, &filetype) == -1
+    return
+  endif
   let currentLine  = getline(".")
   let parsedLine = c2view#parse#getColor(currentLine)
   if parsedLine['type'] is# g:c2view_parsed_type_none
