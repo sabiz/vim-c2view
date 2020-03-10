@@ -74,7 +74,7 @@ function! s:parseRgbColor(text)
   "End ?
   let endPos = matchstrpos(a:text, '\s*)', searchPos)
   if endPos[1] == searchPos
-    return [join(rgba[0: -2], ','), start, searchPos[2]]
+    return [join(rgba[0: -2], ','), start, endPos[2]]
   endif
 
   let separaterPos = matchstrpos(a:text, '\s*\(,\|\/\)\s*\|\s*', searchPos)
