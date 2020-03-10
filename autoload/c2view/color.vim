@@ -97,7 +97,40 @@ function! s:rgb2Ansi(rgb) abort
     return ansi
 
 endfunction
- 
+
+function! s:hsl2Rgb(hsl)abort
+  let [h,s,l] = a:hsl
+  let h = fmod(h, 360.0)
+  if h < 0
+    let h = 360.0 + h
+  endif
+
+  let c = (1-abs(2*l-1))*s
+  let hp = h / 60.0
+  let x = c*(1-abs(fmod(hp, 2)-1))
+  let m = l - c/2
+
+  let cs = (c+m)*255.0
+  let xs = (x+m)*255.0
+  let o = m*255.0
+
+  if hp <= 1
+    return [cs, xs, o]
+  elseif hp <= 2
+    return [xs, cs, o]
+  elseif hp <= 3
+    return [o, cs, xs]
+  elseif hp <= 4
+    return [o, xs, cs]
+  elseif hp <= 5
+    return [xs, o, cs]
+  elseif hp <= 6
+    return [cs, o, xs]
+  endif
+
+  return [0,0,0]
+endfunction
+
 function! c2view#color#hex2Ansi(hex) abort
     let rgb = s:hexColor2DecColor(a:hex)
     return s:rgb2Ansi(rgb)
@@ -114,6 +147,20 @@ function! c2view#color#rgba2Ansi(rgba) abort
 
   " Invalid length
   return -1
+endfunction
+
+function! c2view#color#hsla2Ansi(hsla) abort
+  let hslaList = map(split(a:hsla, ','), 'str2float(v:val)')
+  let hslaLength = len(hslaList)
+  if hslaLength != 3 && hslaLength != 4
+    " Invalid length
+    return -1
+  endif
+  let rgb = s:hsl2Rgb(hslaList[0:2])
+  if hslaLength == 3
+    return s:rgb2Ansi(rgb)
+  endif
+  return s:rgb2Ansi(s:alphaBlend(rgb[0], rgb[1], rgb[2], hslaList[3]))
 endfunction
 
 let &cpo = s:keepcpo

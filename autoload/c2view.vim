@@ -26,9 +26,10 @@ function! c2view#Run()
       return
     endif
   elseif parsedLine['type'] is# g:c2view_parsed_type_hsl
-    let colorCode = c2view#color#hex2Ansi(parsedLine['color'])
-    " echo parsedLine
-    return
+    let colorCode = c2view#color#hsla2Ansi(parsedLine['color'])
+    if colorCode == -1
+       return
+    endif
   else
     return
   endif

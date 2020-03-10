@@ -111,7 +111,117 @@ function! s:parseHslColor(text)
   if hslaPos[2] == -1
     return ['', -1, -1]
   endif
-    return ''
+  let start = hslaPos[1]
+  let searchPos = hslaPos[2]
+
+  " Turn
+  let turnRegex = '\c^\(+\|-\)\?\(\d*\.\d\+\|\d\+\)turn'
+  " Grad
+   let gradRegex = '\c^\(+\|-\)\?\(\d*\.\d\+\|\d\+\)grad'
+  " Rad
+   let radRegex = '\c^\(+\|-\)\?\(\d*\.\d\+\|\d\+\)rad'
+  " Deg
+   let degRegex = '\c^\(+\|-\)\?\(\d*\.\d\+\|\d\+\)\(deg\)\?'
+  " 0% - 100%
+  let parcentRegex = '^\(100\(\.0\+\)\?\|[1-9]\d\(\.\d\+\)\?\|\d\(\.\d\+\)\?\)%'
+  " 0 -1
+  let alphaRegex = '0\?\.\d\+\|1\|0'
+
+  let hsla = [-1, -1, -1, -1]
+  let parsedHue = 0
+
+  " Check [turn]
+  let turnResult =  matchstrpos(a:text, turnRegex, searchPos)
+  if turnResult[0] != ''
+    let parsedHue = 1
+    let deg = str2float(substitute(tolower(turnResult[0]), 'turn', '', ''))*360.0
+    let hsla[0] = deg
+    let searchPos = turnResult[2]
+  endif
+
+  " Check [Grad]
+  if parsedHue == 0
+    let gradResult = matchstrpos(a:text, gradRegex, searchPos)
+    if gradResult[0] != ''
+      let parsedHue = 1
+      let deg = str2float(substitute(tolower(gradResult[0]), 'grad', '', ''))*180.0/200.0
+      let hsla[0] = deg
+      let searchPos = gradResult[2]
+    endif
+  endif
+
+  " Check [Rad]
+  if parsedHue == 0
+    let radResult = matchstrpos(a:text, radRegex, searchPos)
+    if radResult[0] != ''
+      let parsedHue = 1
+      let deg = str2float(substitute(tolower(radResult[0]), 'rad', '', ''))*180.0/3.14159
+      let hsla[0] = deg
+      let searchPos = radResult[2]
+    endif
+  endif
+
+  " Check [Deg]
+  if parsedHue == 0
+    let degResult = matchstrpos(a:text, degRegex, searchPos)
+    if degResult[0] != ''
+      let parsedHue = 1
+      let deg = str2float(substitute(tolower(degResult[0]), 'deg', '', ''))
+      let hsla[0] = deg
+      let searchPos = degResult[2]
+    endif
+  endif
+
+
+  if parsedHue != 1
+    return ['', -1, -1]
+  endif
+
+  for i in [1, 2]
+    let separaterPos = matchstrpos(a:text, '^\s\+\|^\s*,\s*', searchPos)
+    if separaterPos[1] == -1
+      return ['', -1, -1]
+    endif
+    let searchPos = separaterPos[2]
+
+    let parcentPos = matchstrpos(a:text, parcentRegex, searchPos)
+    if parcentPos[1] == -1
+      return ['', -1, -1]
+    endif
+    let hsla[i] = str2float(substitute(parcentPos[0], '%', '', '')) / 100.0
+    let searchPos = parcentPos[2]
+  endfor
+
+  "End ?
+  let endPos = matchstrpos(a:text, '\s*)', searchPos)
+  if endPos[1] == searchPos
+    return [join(hsla[0: -2], ','), start, endPos[2]]
+  endif
+
+  let separaterPos = matchstrpos(a:text, '\s*\(,\|\/\)\s*\|\s*', searchPos)
+  if separaterPos[1] == -1
+    return ['', -1, -1]
+  endif
+  let searchPos = separaterPos[2]
+
+  " parcent style alpha value?
+  let parcentStyleAlpha =  matchstrpos(a:text, parcentRegex, searchPos)
+  if parcentStyleAlpha[1] != -1
+    let hsla[3] = substitute(parcentStyleAlpha[0], '%', '', '')
+    let hsla[3] = str2float(hsla[3]) / 100.0 " Scale to 0-1
+    let endPos = matchstrpos(a:text, '\s*)', parcentStyleAlpha[2])
+    if endPos[1] == parcentStyleAlpha[2]
+      return [join(hsla, ','), start, endPos[2]]
+    endif
+  endif
+
+  let alpha =  matchstrpos(a:text, alphaRegex, searchPos)
+  if alpha[1] != -1
+    let hsla[3] = alpha[0]
+    let endPos = matchstrpos(a:text, '\s*)', alpha[2])
+    if endPos[1] == alpha[2]
+      return [join(hsla, ','), start, endPos[2]]
+    endif
   endif
 
   return ['', -1, -1]
